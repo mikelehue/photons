@@ -63,46 +63,39 @@ print('Input power:', power_inp)
 print('Input photons per pixel per second:', N_inp_pixel)
 
 # Calculate the number of total photons per second for the input power, for two different ODs
-# The function has to return two different values for the two different ODs
-OD1 = 6.7393  # First Optical Density
-OD2 = 8.6743  # Second Optical Density
-def total_photons_per_second(power, wavelength, OD1, OD2):
-    """Calculate the total number of photons per second for a given power, wavelength and two ODs."""
+# The function has to return three different values for the three different ODs
+OD1 = 3.3705 # First Optical Density (NE20B-B  + FF01-810/10-25)
+OD2 = 6.7511  # Second Optical Density (NE20B-B + NE20A-B + FF01-810/10-25)
+OD3 = 8.6954  # Third Optical Density (NE20B-B + NE20A-B + NE10B-B + FF01-810/10-25)
+def total_photons_per_second(power, wavelength, OD1, OD2, OD3):
+    """Calculate the total number of photons per second for a given power, wavelength and three ODs."""
     T1 = 10 ** (-OD1)  # Transmission from OD1
     T2 = 10 ** (-OD2)  # Transmission from OD2
+    T3 = 10 ** (-OD3)  # Transmission from OD3
     N1 = power * T1 * (1 / (h * c / wavelength))  # Photons per second for OD1
     N2 = power * T2 * (1 / (h * c / wavelength))  # Photons per second for OD2
-    return N1, N2
+    N3 = power * T3 * (1 / (h * c / wavelength))  # Photons per second for OD3
+    return N1, N2, N3
 
 # Open an empty file to append the results
-# We need to save: (Angle of polarizers, Input power, Number of photons per second with OD1, Number of photons per second with OD2)
+# We need to save: (Angle of polarizers, Input power, Number of photons per second with OD1, Number of photons per second with OD2, Number of photons per second with OD3)
 # The function has to append the results to the file and ask me what is the angle of the polarizers and the input power
 filename='results.txt'
-def append_results_to_file(angle, input_power, N1, N2, filename):
+def append_results_to_file(angle, input_power, N1, N2, N3, filename):
     """Append the results to a file."""
     with open(filename, 'a') as file:
-        file.write(f"{angle}, {input_power}, {N1}, {N2}\n")
+        file.write(f"{angle}, {input_power}, {N1}, {N2}, {N3}\n")
 
 # Ask for the angle of the polarizers and the input power
 angle = float(input("Enter the angle of the polarizers (in degrees): "))
 input_power = float(input("Enter the input power (in W): "))
-# Calculate the number of photons per second for the input power and the two ODs    
-N1, N2 = total_photons_per_second(input_power, lam, OD1, OD2)
+# Calculate the number of photons per second for the input power and the three ODs    
+N1, N2, N3 = total_photons_per_second(input_power, lam, OD1, OD2, OD3)
 # Append the results to the file
-append_results_to_file(angle, input_power, N1, N2)
+append_results_to_file(angle, input_power, N1, N2, N3)
 # Print a message to confirm that the results have been saved
 print(f"Results saved to {filename} with angle {angle} and input power {input_power} W.")
-#%% Plot the results
-import matplotlib.pyplot as plt
-# Plot the number of photons per second for the two ODs
-plt.figure(figsize=(10, 6))
-plt.bar(['OD1', 'OD2'], [N1, N2], color=['blue', 'orange'])
-plt.title('Number of Photons per Second for Different ODs')
-plt.xlabel('Optical Density')
-plt.ylabel('Number of Photons per Second')
-plt.grid(axis='y')
-plt.savefig('photons_per_second.png')
-plt.show()
+
 #%% Save the results to a CSV file
 import pandas as pd
 def save_results_to_csv(filename='results.csv'):
