@@ -81,31 +81,57 @@ def total_photons_per_second(power, wavelength, OD1, OD2, OD3):
 # We need to save: (Angle of polarizers, Input power, Number of photons per second with OD1, Number of photons per second with OD2, Number of photons per second with OD3)
 # The function has to append the results to the file and ask me what is the angle of the polarizers and the input power
 filename='results.txt'
-def append_results_to_file(angle, input_power, N1, N2, N3, filename):
+
+def append_results_to_file(angle, input_power, std, filename):
     """Append the results to a file."""
     with open(filename, 'a') as file:
-        file.write(f"{angle}, {input_power}, {N1}, {N2}, {N3}\n")
+        file.write(f"{angle}, {input_power}, {std}\n")
 
-# Ask for the angle of the polarizers and the input power
-angle = float(input("Enter the angle of the polarizers (in degrees): "))
-input_power = float(input("Enter the input power (in W): "))
-# Calculate the number of photons per second for the input power and the three ODs    
-N1, N2, N3 = total_photons_per_second(input_power, lam, OD1, OD2, OD3)
-# Append the results to the file
-append_results_to_file(angle, input_power, N1, N2, N3)
+# Ask if we are measuring, if yes, then we will append the results to the file
+# If not, we continue with the calculations
+measure = input("Are you measuring? (yes/no): ").strip().lower()
+if measure == 'yes':
+    # Ask for the angle of the polarizers and the input power
+    angle = float(input("Enter the angle of the polarizers (in degrees): "))
+    input_power = float(input("Enter the input power (in uW): "))
+    std = float(input("Enter the standard deviation of the input power (in nW): "))
+
+    # Append the results to the file
+    append_results_to_file(angle, input_power*10**(-6), std*10**(-9), N1, N2, N3, filename)
+    # Print a message to confirm that the results have been saved
+    print(f"Results saved to {filename} with angle {angle} and input power {input_power} W.")
+
+# Now we can calculate the total number of photons per second for the input power and the three ODs for all the input powers in the file
+# We want also error propagation from the standard deviation of the input power to the total number of photons per second
+def calculate_total_photons_from_file(filename, wavelength):
+    """Calculate the total number of photons per second from the input powers in the file."""
+    results = []
+    with open(filename, 'r') as file:
+        for line in file:
+            angle, input_power, std = map(float, line.strip().split(', '))
+            N1, N2, N3 = total_photons_per_second(input_power, wavelength, OD1, OD2, OD3)
+            results.append((angle, input_power, std, N1, N2, N3))
+    return results
+
+# Calculate the total number of photons per second for the input powers in the file
+results = calculate_total_photons_from_file(filename, lam)
+# Print the results
+for angle, input_power, std, N1, N2, N3 in results:
+    print(f"Angle: {angle} degrees, Input Power: {input_power} W, Std: {std} W")
+    print(f"Photons per second with OD1: {N1}, OD2: {N2}, OD3: {N3}")
+    print("-" * 50)
+
+# Save the results to a new file
+def save_results_to_file(results, output_filename):
+    """Save the results to a new file."""
+    with open(output_filename, 'w') as file:
+        file.write("Angle, Input Power (W), Std (W), N1, N2, N3\n")
+        for angle, input_power, std, N1, N2, N3 in results:
+            file.write(f"{angle}, {input_power}, {std}, {N1}, {N2}, {N3}\n")
+
+# Save the results to a new file
+output_filename = 'total_photons_results.txt'
+save_results_to_file(results, output_filename)
+print(f"Results saved to {output_filename}")
 # Print a message to confirm that the results have been saved
-print(f"Results saved to {filename} with angle {angle} and input power {input_power} W.")
-
-#%% Save the results to a CSV file
-import pandas as pd
-def save_results_to_csv(filename='results.csv'):
-    """Save the results to a CSV file."""
-    data = {
-        'Angle (degrees)': [angle],
-        'Input Power (W)': [input_power],
-        'Photons per Second OD1': [N1],
-        'Photons per Second OD2': [N2]
-    }
-    df = pd.DataFrame(data)
-    df.to_csv(filename, index=False)
-    print(f"Results saved to {filename}")
+print(f"Results saved to {output_filename} with {len(results)} entries.")
